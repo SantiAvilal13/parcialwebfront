@@ -1,0 +1,14 @@
+{
+  "name": "parcialwebfront",
+  "version": "1.0.0",
+  "description": "Frontend Parcial Web Torneos",
+  "main": "app.js",
+  "scripts": {
+    "start": "serve -l 4042",
+    "dev": "browser-sync start --server --port 4042 --files \"*.html, *.css, *.js\""
+  },
+  "devDependencies": {
+    "browser-sync": "^3.0.0",
+    "serve": "^14.2.1"
+  }
+}

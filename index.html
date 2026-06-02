@@ -4,73 +4,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Torneos</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <h1>Sistema de Gestión de Torneos</h1>
-            <p>Administra los torneos deportivos de forma rápida y sencilla</p>
-        </header>
-
+    <div class="dashboard-container">
         <main class="main-content">
-            <section class="form-section card">
-                <h2 id="form-title">Registrar Nuevo Torneo</h2>
-                <form id="torneo-form">
-                    <input type="hidden" id="torneo-id">
-                    
-                    <div class="form-group">
-                        <label for="nombre">Nombre del Torneo</label>
-                        <input type="text" id="nombre" name="nombre" required placeholder="Ej: Copa América 2025">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="deporte">Deporte</label>
-                        <input type="text" id="deporte" name="deporte" required placeholder="Ej: Fútbol">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="fechaInicio">Fecha de Inicio</label>
-                        <input type="date" id="fechaInicio" name="fechaInicio" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="ciudad">Ciudad</label>
-                        <input type="text" id="ciudad" name="ciudad" required placeholder="Ej: Buenos Aires">
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="button" id="btn-cancel" class="btn btn-secondary hidden">Cancelar</button>
-                        <button type="submit" id="btn-submit" class="btn btn-primary">Guardar Torneo</button>
-                    </div>
-                </form>
-            </section>
-
-            <section class="table-section card">
-                <h2>Torneos Registrados</h2>
-                <div class="table-responsive">
-                    <table id="torneos-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nombre</th>
-                                <th>Deporte</th>
-                                <th>Fecha Inicio</th>
-                                <th>Ciudad</th>
-                                <th class="actions-col">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="torneos-tbody">
-                            <!-- Los datos se cargarán aquí dinámicamente -->
-                        </tbody>
-                    </table>
+            <header class="page-header">
+                <div class="header-text">
+                    <h1>Gestión de Torneos</h1>
+                    <p>Administra los torneos y sus detalles principales</p>
                 </div>
-            </section>
+            </header>
+
+            <div class="content-grid">
+                <!-- Formulario -->
+                <section class="form-section panel">
+                    <h2 class="panel-title" id="form-title">Registrar Nuevo Torneo</h2>
+                    <form id="torneo-form">
+                        <input type="hidden" id="torneo-id">
+                        
+                        <div class="form-group">
+                            <label for="nombre">Nombre del Torneo</label>
+                            <input type="text" id="nombre" class="form-input" placeholder="Ej. Copa América 2025" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="deporte">Deporte</label>
+                            <input type="text" id="deporte" class="form-input" placeholder="Ej. Fútbol" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fechaInicio">Fecha de Inicio</label>
+                            <input type="date" id="fechaInicio" class="form-input" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ciudad">Ciudad</label>
+                            <input type="text" id="ciudad" class="form-input" placeholder="Ej. Buenos Aires" required>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-cancelar" id="btn-cancelar" style="display: none;">Cancelar</button>
+                            <button type="submit" class="btn-confirmar" id="btn-submit">
+                                <i class="fas fa-save"></i> Guardar Torneo
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Tabla de Torneos -->
+                <section class="table-section panel">
+                    <h2 class="panel-title">Torneos Registrados</h2>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Deporte</th>
+                                    <th>Fecha Inicio</th>
+                                    <th>Ciudad</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="torneos-tbody">
+                                <!-- Las filas se cargarán dinámicamente aquí -->
+                                <tr>
+                                    <td colspan="6" class="loading-state">
+                                        <div class="loading-spinner"></div>
+                                        Cargando torneos...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
         </main>
     </div>
+
+    <!-- SweetAlert2 para notificaciones elegantes (Opcional, pero recomendado para UX profesional) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="app.js"></script>
 </body>
 </html>

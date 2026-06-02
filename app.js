@@ -1,212 +1,210 @@
 const API_URL = 'http://localhost:8080/api/torneos';
 
-// DOM Elements
-const form = document.getElementById('torneo-form');
-const torneoIdInput = document.getElementById('torneo-id');
-const nombreInput = document.getElementById('nombre');
-const deporteInput = document.getElementById('deporte');
-const fechaInicioInput = document.getElementById('fechaInicio');
-const ciudadInput = document.getElementById('ciudad');
-const tbody = document.getElementById('torneos-tbody');
+// Elementos del DOM
+const torneoForm = document.getElementById('torneo-form');
+const torneosTbody = document.getElementById('torneos-tbody');
+const inputId = document.getElementById('torneo-id');
+const inputNombre = document.getElementById('nombre');
+const inputDeporte = document.getElementById('deporte');
+const inputFechaInicio = document.getElementById('fechaInicio');
+const inputCiudad = document.getElementById('ciudad');
+const btnCancelar = document.getElementById('btn-cancelar');
 const formTitle = document.getElementById('form-title');
 const btnSubmit = document.getElementById('btn-submit');
-const btnCancel = document.getElementById('btn-cancel');
 
-let torneosCache = [];
+// Variables globales
+let torneosData = []; // Para almacenar los torneos y evitar hacer GET al editar
 
-// Load tournaments on startup
-document.addEventListener('DOMContentLoaded', fetchTorneos);
+// Event Listeners
+document.addEventListener('DOMContentLoaded', cargarTorneos);
+torneoForm.addEventListener('submit', guardarTorneo);
+btnCancelar.addEventListener('click', resetForm);
 
-// Form submit event
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const torneo = {
-        nombre: nombreInput.value.trim(),
-        deporte: deporteInput.value.trim(),
-        fechaInicio: fechaInicioInput.value,
-        ciudad: ciudadInput.value.trim()
-    };
-
-    const id = torneoIdInput.value;
-    
-    if (id) {
-        await updateTorneo(id, torneo);
-    } else {
-        await createTorneo(torneo);
-    }
-});
-
-// Cancel edit
-btnCancel.addEventListener('click', resetForm);
-
-// API Functions
-async function fetchTorneos() {
+// Función para obtener y mostrar todos los torneos
+async function cargarTorneos() {
     try {
         const response = await fetch(API_URL);
-        if (!response.ok) throw new Error('Error al cargar los torneos');
-        torneosCache = await response.json();
-        renderTable(torneosCache);
-    } catch (error) {
-        console.error('Fetch error:', error);
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--danger-color); padding: 2rem;">Error al cargar datos del servidor. Asegúrese de que el backend esté ejecutándose en localhost:8080</td></tr>`;
-    }
-}
-
-async function createTorneo(torneo) {
-    try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(torneo)
-        });
+        if (!response.ok) throw new Error('Error al obtener los torneos');
         
-        if (response.ok) {
-            resetForm();
-            await fetchTorneos();
-            alert('Torneo creado exitosamente');
-        } else {
-            console.error('Error al crear torneo');
-            alert('No se pudo crear el torneo.');
-        }
+        torneosData = await response.json();
+        renderizarTabla();
     } catch (error) {
-        console.error('Create error:', error);
-        alert('Error de conexión con el servidor.');
+        console.error('Error:', error);
+        torneosTbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="empty-state">
+                    <i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i>
+                    <p>Error de conexión con el servidor backend.</p>
+                </td>
+            </tr>
+        `;
+        Swal.fire('Error', 'No se pudieron cargar los torneos. Asegúrate de que el backend esté en ejecución.', 'error');
     }
 }
 
-async function updateTorneo(id, torneo) {
-    try {
-        const response = await fetch(`${API_URL}/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(torneo)
-        });
-        
-        if (response.ok) {
-            resetForm();
-            await fetchTorneos();
-            alert('Torneo actualizado exitosamente');
-        } else {
-            console.error('Error al actualizar torneo');
-            alert('No se pudo actualizar el torneo.');
-        }
-    } catch (error) {
-        console.error('Update error:', error);
-        alert('Error de conexión con el servidor.');
-    }
-}
+// Función para renderizar la tabla con los datos actuales
+function renderizarTabla() {
+    torneosTbody.innerHTML = '';
 
-async function deleteTorneo(id) {
-    if (!confirm('¿Estás seguro de que deseas eliminar este torneo?')) return;
-    
-    try {
-        const response = await fetch(`${API_URL}/${id}`, {
-            method: 'DELETE'
-        });
-        
-        if (response.ok) {
-            await fetchTorneos();
-            alert('Torneo eliminado exitosamente');
-        } else {
-            console.error('Error al eliminar torneo');
-            alert('No se pudo eliminar el torneo.');
-        }
-    } catch (error) {
-        console.error('Delete error:', error);
-        alert('Error de conexión con el servidor.');
-    }
-}
-
-// UI Functions
-function renderTable(torneos) {
-    tbody.innerHTML = '';
-    
-    if (!torneos || torneos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">No hay torneos registrados.</td></tr>`;
+    if (torneosData.length === 0) {
+        torneosTbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <p>No hay torneos registrados aún.</p>
+                </td>
+            </tr>
+        `;
         return;
     }
-    
-    torneos.forEach((torneo, index) => {
+
+    torneosData.forEach(torneo => {
         const tr = document.createElement('tr');
-        tr.style.animationDelay = `${index * 0.05}s`;
+        
+        // Extraemos solo la parte de la fecha si viene con hora
+        const fecha = torneo.fechaInicio ? torneo.fechaInicio.split('T')[0] : '';
         
         tr.innerHTML = `
             <td>${torneo.id}</td>
-            <td style="font-weight: 500;">${torneo.nombre}</td>
+            <td><strong>${torneo.nombre}</strong></td>
             <td>${torneo.deporte}</td>
-            <td>${formatDate(torneo.fechaInicio)}</td>
+            <td>${fecha}</td>
             <td>${torneo.ciudad}</td>
             <td class="action-buttons">
-                <button type="button" class="btn btn-sm btn-edit" data-id="${torneo.id}">Editar</button>
-                <button type="button" class="btn btn-sm btn-delete" data-id="${torneo.id}">Eliminar</button>
+                <button class="btn-icon btn-edit" onclick="cargarDatosEdicion(${torneo.id})" title="Editar">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-icon btn-delete" onclick="eliminarTorneo(${torneo.id})" title="Eliminar">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
             </td>
         `;
-        tbody.appendChild(tr);
-    });
-
-    // Attach event listeners to dynamically created buttons
-    document.querySelectorAll('.btn-edit').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const id = e.target.getAttribute('data-id');
-            editTorneo(id);
-        });
-    });
-
-    document.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const id = e.target.getAttribute('data-id');
-            deleteTorneo(id);
-        });
+        torneosTbody.appendChild(tr);
     });
 }
 
-function editTorneo(id) {
-    const torneo = torneosCache.find(t => t.id == id);
+// Función para crear o actualizar un torneo
+async function guardarTorneo(e) {
+    e.preventDefault();
+
+    const id = inputId.value;
+    const torneo = {
+        nombre: inputNombre.value.trim(),
+        deporte: inputDeporte.value.trim(),
+        fechaInicio: inputFechaInicio.value,
+        ciudad: inputCiudad.value.trim()
+    };
+
+    const isEdit = id !== '';
+    const url = isEdit ? `${API_URL}/${id}` : API_URL;
+    const method = isEdit ? 'PUT' : 'POST';
+
+    try {
+        // Mostrar estado de carga en el botón
+        const btnOriginalText = btnSubmit.innerHTML;
+        btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+        btnSubmit.disabled = true;
+
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(torneo)
+        });
+
+        if (!response.ok) throw new Error('Error al guardar el torneo');
+
+        // Resetear y recargar
+        resetForm();
+        await cargarTorneos();
+
+        Swal.fire({
+            icon: 'success',
+            title: isEdit ? 'Actualizado!' : 'Guardado!',
+            text: isEdit ? 'El torneo se actualizó correctamente.' : 'El torneo fue registrado con éxito.',
+            timer: 2000,
+            showConfirmButton: false
+        });
+
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudo guardar el torneo.', 'error');
+    } finally {
+        // Restaurar botón
+        btnSubmit.innerHTML = isEdit ? '<i class="fas fa-save"></i> Actualizar Torneo' : '<i class="fas fa-save"></i> Guardar Torneo';
+        btnSubmit.disabled = false;
+    }
+}
+
+// Función para cargar los datos en el formulario para editar
+function cargarDatosEdicion(id) {
+    const torneo = torneosData.find(t => t.id === id);
     if (!torneo) return;
 
-    torneoIdInput.value = torneo.id;
-    nombreInput.value = torneo.nombre;
-    deporteInput.value = torneo.deporte;
+    inputId.value = torneo.id;
+    inputNombre.value = torneo.nombre;
+    inputDeporte.value = torneo.deporte;
+    inputCiudad.value = torneo.ciudad;
     
-    let dateStr = torneo.fechaInicio;
-    // The backend returns string format, if it returns it in any other format it needs adapting
-    if (dateStr && dateStr.includes('/')) {
-        const parts = dateStr.split('/');
-        if (parts.length === 3) {
-            dateStr = `${parts[2]}-${parts[1]}-${parts[0]}`; // Convert dd/mm/yyyy to yyyy-mm-dd
+    // Formatear fecha para el input date (YYYY-MM-DD)
+    if (torneo.fechaInicio) {
+        inputFechaInicio.value = torneo.fechaInicio.split('T')[0];
+    } else {
+        inputFechaInicio.value = '';
+    }
+
+    // Cambiar UI del formulario
+    formTitle.textContent = `Editar Torneo #${id}`;
+    btnSubmit.innerHTML = '<i class="fas fa-save"></i> Actualizar Torneo';
+    btnCancelar.style.display = 'block';
+
+    // Hacer scroll hacia el formulario suavemente
+    document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Función para eliminar un torneo
+function eliminarTorneo(id) {
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: "Esta acción no se puede deshacer.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#475569',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Error al eliminar');
+
+                await cargarTorneos();
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Eliminado!',
+                    text: 'El torneo ha sido eliminado.',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire('Error', 'No se pudo eliminar el torneo.', 'error');
+            }
         }
-    }
-    
-    // date input needs YYYY-MM-DD
-    fechaInicioInput.value = dateStr; 
-    ciudadInput.value = torneo.ciudad;
-    
-    formTitle.textContent = 'Editar Torneo';
-    btnSubmit.textContent = 'Actualizar Torneo';
-    btnCancel.classList.remove('hidden');
-    
-    // Scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 }
 
+// Función para limpiar el formulario y resetear estados
 function resetForm() {
-    form.reset();
-    torneoIdInput.value = '';
+    torneoForm.reset();
+    inputId.value = '';
     formTitle.textContent = 'Registrar Nuevo Torneo';
-    btnSubmit.textContent = 'Guardar Torneo';
-    btnCancel.classList.add('hidden');
-}
-
-function formatDate(dateString) {
-    if (!dateString) return '';
-    if (dateString.includes('-') && dateString.length === 10) {
-        const [year, month, day] = dateString.split('-');
-        return `${day}/${month}/${year}`;
-    }
-    return dateString;
+    btnSubmit.innerHTML = '<i class="fas fa-save"></i> Guardar Torneo';
+    btnCancelar.style.display = 'none';
 }
